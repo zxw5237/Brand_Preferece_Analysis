@@ -1,0 +1,172 @@
+---
+title: "brand-file"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+
+library(caret)
+set.seed(500)
+response = data.frame(response)
+needed = data.frame(needed)
+head(response)
+```
+
+
+```{r}
+summary(response)
+```
+
+```{r}
+cor(response)
+```
+
+```{r}
+zy = glm(response$brand ~ ., data=response, family=binomial)
+summary(zy)
+```
+
+```{r}
+response$brand= as.factor(response$brand)
+response$elevel= as.factor(response$elevel)
+response$car= as.factor(response$car)
+response$zipcode= as.factor(response$zipcode)
+
+```
+
+```{r}
+needed$brand= as.factor(needed$brand)
+needed$elevel= as.factor(needed$elevel)
+needed$car= as.factor(needed$car)
+needed$zipcode= as.factor(needed$zipcode)
+```
+
+
+
+create Data Partition
+```{r}
+set.seed(500)
+training <- createDataPartition(response$brand, p = 0.75, list = FALSE)
+train <- response[training,]
+test <- response[-training,]
+```
+apply random forest
+
+run 5 times
+```{r}
+library(randomForest)
+trControl=trainControl(method  = "cv", number  = 10) 
+rf2 <- randomForest(brand ~ .,
+             trControl  = trControl,
+             data       = train,
+             mtry = 2,
+             importance = T)
+print(rf2)
+```
+```{r}
+rf1 <- randomForest(brand ~ .,
+             trControl  = trControl,
+             data       = train,
+             mtry = 1,
+             importance = T)
+print(rf1)
+```
+```{r}
+rf3 <- randomForest(brand ~ .,
+             trControl  = trControl,
+             data       = train,
+             mtry = 3,
+             importance = T)
+print(rf3)
+```
+```{r}
+rf4 <- randomForest(brand ~ .,
+             trControl  = trControl,
+             data       = train,
+             mtry = 4,
+             importance = T)
+print(rf4)
+```
+```{r}
+rf5 <- randomForest(brand ~ .,
+             trControl  = trControl,
+             data       = train,
+             mtry = 5,
+             importance = T)
+print(rf5)
+```
+
+```{r}
+respon.pred3=predict(rf3,test,type='class')
+confusionMatrix(respon.pred3,test$brand)
+```
+
+
+
+
+
+
+```{r}
+respon.pred2=predict(rf2,test,type='class')
+confusionMatrix(respon.pred2,test$brand)
+```
+
+
+```{r}
+varImpPlot(rf3)
+importance(rf3)
+```
+
+```{r}
+target <- needed[c(1,2,3,4,5,6)]
+View(target)
+```
+
+
+```{r}
+result <- predict(rf3, target, type= 'class')
+confusionMatrix(result, needed$brand)
+```
+
+```{r}
+par(mfrow = c(1,2))
+plot(result)
+plot(needed$brand)
+```
+
+
+```{r}
+library(C50)
+trControl=trainControl(method  = "cv", number  = 10) 
+grid <- expand.grid( .winnow = FALSE, .trials= c(1,5,10,15), .model="tree" ) 
+mdl<- train(x=train[,-7],y=train$brand,tuneGrid=grid,trControl=trControl,method="C5.0",verbose=FALSE)
+summary(mdl)
+```
+
+```{r}
+trControl=trainControl(method  = "cv", number  = 10) 
+grid <- expand.grid( .winnow = FALSE, .trials= c(1,5,10,15), .model="tree" ) 
+mdl<- train(x=train[,-7],y=train$brand,tuneGrid=grid,trControl=trControl,method="C5.0",verbose=FALSE)
+summary(mdl)
+```
+```{r}
+table(predict(mdl,needed[,-7]))
+```
+```{r}
+result1 <- predict(mdl, needed[,-7])
+confusionMatrix(result1, needed$brand)
+```
+```{r}
+par(mfrow = c(1,2))
+plot(result1)
+plot(needed$brand)
+```
+
+ 
+ 
